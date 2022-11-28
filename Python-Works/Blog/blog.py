@@ -5,6 +5,18 @@ from flask_mysqldb import MySQL
 from wtforms import Form, StringField, TextAreaField
 from wtforms import PasswordField, validators
 from passlib.hash import sha256_crypt
+from functools import wraps
+
+# Kullanıcı giriş decorator
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if "logged_in" in session:
+            return f(*args, **kwargs)
+        else:
+            flash("Bu sayfayı görüntülemek için lütfen giriş yapın", "danger")
+            return redirect(url_for("login"))
+    return decorated_function
 
 # Kullanıcı kayıt formu
 class RegisterForm(Form): # input alanları
@@ -48,6 +60,11 @@ def about():
 def detail(id): # dinamik URL yapısı kuruldu
     return "Article ID : " + id
 
+@app.route("/dashboard") # dashboard sayfası
+@login_required # decorator buraya ekelnince kontrol yapılacak
+def dashboard():
+    return render_template("dashboard.html")
+
 # register işlemi
 @app.route("/register", methods = ["GET", "POST"])
 def register():
@@ -89,6 +106,9 @@ def login():
             if sha256_crypt.verify(password_entered, real_password):
                 # parola doğru ise
                 flash("Başarıyla Giriş Yaptınız ...", "success")
+                # session başlatmak
+                session["logged_in"] = True # giriş yaptığımız için True
+                session["username"] = username # giriş yapan kullanıcı adı
                 return redirect(url_for("index"))
             else: # parola yanlış ise
                 flash("Parolanızı Yanlış girdiniz ...", "danger")
@@ -97,6 +117,12 @@ def login():
             flash("Böyle bir kullanıcı bulunmuyor !!!", "danger")
             return redirect(url_for("login"))
     return render_template("login.html", form = form)
+
+# log out işlemi
+@app.route("/logout")
+def logout():
+    session.clear() # session kapatılıyor.
+    return redirect(url_for("index")) # ana sayfaya dönüyoruz.
 
 if __name__ == "__main__": # local host çalıştırma
     app.run(debug=True) # Hata Mesajlarını açtık
