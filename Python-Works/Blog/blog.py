@@ -32,7 +32,7 @@ class RegisterForm(Form): # input alanları
     ])
     confirm = PasswordField("Parola Doğrula")
 
-# login formu
+# Login Formu
 class LoginForm(Form):
     username = StringField("Kullanıcı Adı")
     password = PasswordField("Parola")
@@ -48,6 +48,15 @@ app.config["MYSQL_CURSORCLASS"] = "DictCursor"
 # MySQL sınıfı oluşturlım.
 mysql = MySQL(app)
 
+# makale Formu
+class ArticleForm(Form):
+    title = StringField("Makale Başlığı", validators=[
+        validators.Length(min = 5, max = 100)
+    ])
+    # alan büyük olacağı için TextAreaField kulalnılıyor
+    content = TextAreaField("Makale İçeriği", validators =[
+        validators.Length(min = 10)]) 
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -55,6 +64,21 @@ def index():
 @app.route("/about")
 def about():
     return render_template("about.html")
+
+# Makale Sayfası 
+@app.route("/articles")
+def articles():
+    # cursor Oluşturalım
+    cursor = mysql.connection.cursor()
+    # bütün makaleleri alalım
+    sorgu = "SELECT * FROM articles" # tüm makaleri al
+    result = cursor.execute(sorgu) # sorguyu çalıştır.
+    if result > 0: # Veri tabanında makale var
+        # tüm makaleleri sözlük olarak alıyoruz.
+        articles = cursor.fetchall()
+        return render_template("articles.html", articles = articles)
+    else: # Veri yok
+        return render_template("articles.html")
 
 @app.route("/article/<string:id>") # article id adresi
 def detail(id): # dinamik URL yapısı kuruldu
@@ -123,6 +147,25 @@ def login():
 def logout():
     session.clear() # session kapatılıyor.
     return redirect(url_for("index")) # ana sayfaya dönüyoruz.
+
+# Makale ekleme
+@app.route("/addarticle", methods = ["GET", "POST"])
+def addarticle():
+    form = ArticleForm(request.form) # Form objesi
+    if request.method == "POST" and form.validate():
+        # bilgileri alalım
+        title = form.title.data
+        content = form.content
+        cursor = mysql.connection.cursor() # cursor oluşturacağız
+        # Sorgu oluşturalım
+        sorgu = "INSERT INTO articles (title, author, content) VALUES(%s, %s, %s)"
+        # sorgu çalıştıralım
+        cursor.execute(sorgu, (title, session["username"], content))
+        mysql.connection.commit() # veri tabnına kayıt
+        cursor.close() # veri tabanı bağlantısını kes
+        flash("Makale başarıyla eklendi.", "success")
+        return redirect(url_for("dashboard")) # Dasboard sayfasına dön
+    return render_template("addarticle.html", form = form)
 
 if __name__ == "__main__": # local host çalıştırma
     app.run(debug=True) # Hata Mesajlarını açtık

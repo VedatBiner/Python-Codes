@@ -1,9 +1,10 @@
 {% extends "layout.html" %}
 
 {% block body %}
-{% from "includes/formhelpers.html" import render_field %}
+
 <h3>Giriş Yap</h3>
 <hr>
+{% from "includes/formhelpers.html" import render_field %}
 <form method = "post">
     {{ render_field(form.username) }}
     {{ render_field(form.password) }}
