@@ -87,7 +87,17 @@ def detail(id): # dinamik URL yapısı kuruldu
 @app.route("/dashboard") # dashboard sayfası
 @login_required # decorator buraya ekelnince kontrol yapılacak
 def dashboard():
-    return render_template("dashboard.html")
+    # cursor Oluşturalım
+    cursor = mysql.connection.cursor()
+    # sorgu Oluşturalım
+    sorgu = "SELECT * FROM articles WHERE author = %s"
+    # sorguyu çalıştıralım
+    result = cursor.execute(sorgu, (session["username"],))
+    if result > 0: # eğer belli kullanıcı adına makale varsa
+        articles = cursor.fetchall()
+        return render_template("dashboard.html", articles = articles)
+    else:
+        return render_template("dashboard.html")
 
 # register işlemi
 @app.route("/register", methods = ["GET", "POST"])
@@ -141,6 +151,22 @@ def login():
             flash("Böyle bir kullanıcı bulunmuyor !!!", "danger")
             return redirect(url_for("login"))
     return render_template("login.html", form = form)
+
+# Detay Sayfası
+# dinamik url yapısı oluşturuluyor
+@app.route("/article/<string:id>") # makale id string olarak alınıyor
+def article(id): # id fonksiyon çağırılınca otomatik gelecek
+    # cursor Oluşturalım
+    cursor = mysql.connection.cursor()
+    # sorgu oluşturalım
+    sorgu = "SELECT * FROM articles WHERE id = %s"
+    # sorguyu çalıştıralım
+    result = cursor.execute(sorgu, (id,))
+    if result > 0:
+        article = cursor.fetchone()
+        return render_template("article.html", article = article)
+    else:
+        return render_template("article.html")
 
 # log out işlemi
 @app.route("/logout")
