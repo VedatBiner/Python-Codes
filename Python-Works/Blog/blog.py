@@ -80,10 +80,6 @@ def articles():
     else: # Veri yok
         return render_template("articles.html")
 
-@app.route("/article/<string:id>") # article id adresi
-def detail(id): # dinamik URL yapısı kuruldu
-    return "Article ID : " + id
-
 @app.route("/dashboard") # dashboard sayfası
 @login_required # decorator buraya ekelnince kontrol yapılacak
 def dashboard():
@@ -182,6 +178,7 @@ def addarticle():
         # bilgileri alalım
         title = form.title.data
         content = form.content
+        # cursor Oluşturalım
         cursor = mysql.connection.cursor() # cursor oluşturacağız
         # Sorgu oluşturalım
         sorgu = "INSERT INTO articles (title, author, content) VALUES(%s, %s, %s)"
@@ -192,6 +189,86 @@ def addarticle():
         flash("Makale başarıyla eklendi.", "success")
         return redirect(url_for("dashboard")) # Dasboard sayfasına dön
     return render_template("addarticle.html", form = form)
+
+# Makale Silme
+@app.route("/delete/<string:id>") # dinamik url
+@login_required # login olduk mu?
+def delete(id):
+    # cursor Oluşturalım
+    cursor = mysql.connection.cursor()
+    # sorgu oluşturalım
+    sorgu = "SELECT * FROM articles WHERE author = %s and id = %s"
+    # sorguyu çalıştıralım
+    result = cursor.execute(sorgu, (session["username"], id))
+    # makale giriş yapan kullanıcıya ait ve varsa result > 0 olur
+    if result > 0 :
+        # silme sorgusu
+        sorgu2 = "DELETE FROM articles WHERE id = %s"
+        # silme sorgusunu çalıştıralım.
+        cursor.execute(sorgu2, (id,))
+        mysql.connection.commit() # veri tabanında değişkli yapıldı
+        return redirect(url_for("dashboard"))
+    else:
+        flash("Böyle bir makale yok veya bu işleme yetkiniz yok", "danger")
+        return redirect(url_for("index"))
+
+# Makale Güncelleme
+@app.route("/edit/<string:id>", methods = ["GET", "POST"]) # dinamik url
+@login_required
+def update(id):
+    # request kontrolü GET mi ? POST mu?
+    if request.method == "GET": # GET metodu ise yapılacaklar
+        # cursor Oluşturalım
+        cursor = mysql.connection.cursor()
+        # sorgu oluşturalım
+        sorgu = "SELECT * FROM articles WHERE id = %s and author = %s"
+        # sorguyu çalıştıralım
+        result = cursor.execute(sorgu, (id, session["username"]))
+        if result == 0: # makale yok veya başka kullanıcının
+            flash("Böyle bir makale yok veya bu işleme yetkiniz yok", "danger")
+            return redirect(url_for("index"))
+        else:
+            article = cursor.fetchone() # makaleyi alalım
+            form = ArticleForm()
+            form.title.data = article["title"]
+            form.content.data = article["content"]
+            return render_template("update.html", form = form)
+    else: # POST metodu ise yapılacaklar
+        # formu oluşturalım
+        form = ArticleForm(request.form)
+        # Formdaki bilgileri alalım
+        newTitle = form.title.data
+        newContent = form.content.data
+        # güncelleme sorgusu 
+        sorgu2 = "UPDATE articles SET title = %s, content = %s WHERE id = %s"
+        # cursor oluşturalım
+        cursor = mysql.connection.cursor()
+        # güncellem sorgusunu çalıştıralım
+        cursor.execute(sorgu2, (newTitle, newContent, id))
+        # bilgiyi güncelleyelim
+        mysql.connection.commit() 
+        flash("Makale başarıyla güncellendi ...", "success")
+        return redirect(url_for("dashboard"))
+
+# Arama URL
+@app.route("/search", methods = ["GET", "POST"])
+def search():
+    if request.method == "GET": # GET metodunda ana sayfaya dönülsün
+        return redirect(url_for("index"))
+    else: # arama kutusundan keyword'u al
+        keyword = request.form.get("keyword")
+        # cursor Oluşturalım
+        cursor = mysql.connection.cursor()
+        # sorgu oluşturalım
+        sorgu = "SELECT * FROM articles WHERE title LIKE '%" + keyword + "%' "
+        # sorguyu çalıştıralım
+        result = cursor.execute(sorgu)
+        if result == 0: # aradığımız kelime yoksa
+            flash("Arana kelimeye uygun makele bulunmadı ...", "warning")
+            return redirect(url_for("articles"))
+        else: # bulunanları alalım
+            articles = cursor.fetchall()
+            return render_template("articles.html", articles = articles)
 
 if __name__ == "__main__": # local host çalıştırma
     app.run(debug=True) # Hata Mesajlarını açtık
