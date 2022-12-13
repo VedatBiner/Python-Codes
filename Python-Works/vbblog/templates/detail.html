@@ -1,0 +1,59 @@
+{% extends "layout.html" %}
+
+{% block body %}
+
+<div class="row">
+    <div class="col-lg-8">
+        <h3 class="mt-4">{{article.title}}</h3>
+        <hr>
+        <p class="lead">{{article.author.username}} tarafından oluşturuldu.</p>
+        <hr>
+        <p class="lead">{{article.created_date}}</p>
+        <hr>
+        {% if article.article_image %} <!-- URL varsa göster -->
+            <img class="img-fluid rounded" src="{{article.article_image.url}}" alt="">
+        {% endif %}
+        <p class="lead">{{article.content|safe}}</p>
+        <hr>
+        <h4>Yorumlar</h4>
+        <hr>
+        {% if comments %} <!--comment var-->
+            {% for comment in comments %}
+                <div class = "media mb-4">
+                    <img class="d-flex mr-3 rounded-circle" src="" alt="">
+                    <div class="media-body">
+                        <h5 class="mt-0">{{comment.comment_author}}</h5>
+                        {{comment.comment_date}}
+                        <br>
+                        {{comment.commen_content}}
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %} <!--comment yok-->
+            <div class="alert alert-danger">
+                Bu makaleye herhangi bir yorum yazılmamış, ilk yorum yapan siz olun.
+            </div>
+        {% endif %}
+        <div class = card my-4>
+            <h5 class = "card-header">Yorum Ekle : </h5>
+            <form method = "post" actiom = "{% url 'article:comment' article.id %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="formGroupExampleInput">İsim</label>
+                    <input 
+                        name = "comment_author" type="text" class="form-control" 
+                        id="formGroupExampleInput" placeholder="İsminizi giriniz ...">
+                </div>
+                <div class="form-group">
+                    <label for="formGroupExampleInput2">Yorum</label>
+                    <textarea name = "comment_content" class="form-control" rows="3"></textarea>
+                </div>
+                <button type="submit" class = "btn btn-danger mb-3">Yorum Ekle</button>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+
+{% endblock %}

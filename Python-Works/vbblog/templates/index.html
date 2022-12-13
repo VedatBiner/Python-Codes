@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+
+{% block body %}
+
+<div class="jumbotron mt-3 text-center">
+    <h1 class="display-4">Merhabalar, Bloğuma Hoşgeldiniz</h1>
+    <p class="lead">Bu blokta teknik bilgi içeren HTML, CSS, Javascript, Dart, Flutter Python yazıları bulunmaktadır.</p>
+    <hr class="my-4">
+    <p>Bu blokta teknik bilgi içeren yazılar bulunmaktadır.</p>
+</div>
+
+<p>
+    {% if request.user.is_authenticated %}
+        Giriş yapılmış, {{request.user.username}}
+    {% else %}
+        Giriş yapılmamış
+    {% endif %}
+
+</p>
+
+{% endblock %}
