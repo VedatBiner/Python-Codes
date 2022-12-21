@@ -1,6 +1,4 @@
-# Kitapyurdu scrap örneği
-# Kodda bir hata var bulmadım. txt dosyası oluşmuyor?
-# json dosyası oluşuyor ama.
+# Kitapyurdu scrapy örneği
 import scrapy
 
 class BooksSpider(scrapy.Spider):
@@ -29,7 +27,7 @@ class BooksSpider(scrapy.Spider):
             }
             """
             self.file.write("---------------------------------------------------------\n")
-            self.file.write(str(self.book_count)) + ".\n" # kitap no
+            self.file.write(str(self.book_count) + ".\n") # kitap no
             self.file.write("Kitap İsmi : " + book_names[i] + "\n") # Kitap Adı
             self.file.write("Yazar : " + book_authors[i] + "\n") # Kitap yazarı
             self.file.write("Yayınevi : " + book_publishers[i] + "\n") # Kitap yayınevi
